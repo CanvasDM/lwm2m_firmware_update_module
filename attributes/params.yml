@@ -1,0 +1,33 @@
+---
+lwm2m_fup_pkg_name:
+  name: lwm2m_fup_pkg_name
+  required: true
+  schema:
+    maxLength: 32
+    minLength: 1
+    type: string
+    x-ctype: string
+  x-broadcast: true
+  x-default: my_firmware
+  x-lockable: false
+  x-prepare: false
+  x-readable: true
+  x-savable: false
+  x-writable: false
+  summary: Firmware update firmware package name
+lwm2m_fup_pkg_ver:
+  name: lwm2m_fup_pkg_ver
+  required: true
+  schema:
+    maxLength: 32
+    minLength: 1
+    type: string
+    x-ctype: string
+  x-broadcast: true
+  x-default: 0.0.0
+  x-lockable: false
+  x-prepare: false
+  x-readable: true
+  x-savable: false
+  x-writable: false
+  summary: Firmware update package version

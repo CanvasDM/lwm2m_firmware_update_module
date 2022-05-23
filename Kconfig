@@ -1,0 +1,74 @@
+#
+# Copyright (c) 2022 Laird Connectivity LLC
+#
+# SPDX-License-Identifier: LicenseRef-LairdConnectivity-Clause
+#
+menuconfig LCZ_LWM2M_FW_UPDATE
+	bool "LCZ LwM2M Firmware Update"
+	depends on LCZ_LWM2M_CLIENT
+	depends on LCZ_LWM2M_FIRMWARE_UPDATE_OBJ_SUPPORT
+	depends on MCUBOOT_IMG_MANAGER
+	depends on DFU_TARGET
+	depends on IMG_ERASE_PROGRESSIVELY
+	depends on BOOTLOADER_MCUBOOT
+
+if LCZ_LWM2M_FW_UPDATE
+
+module=LCZ_LWM2M_FW_UPDATE
+module-str=LCZ_LWM2M_FW_UPDATE
+source "subsys/logging/Kconfig.template.log_config"
+
+config LCZ_LWM2M_FW_UPDATE_INIT_PRIORITY
+    int "Init priority Application for LwM2M client module"
+    range 0 99
+    default APPLICATION_INIT_PRIORITY
+    help
+      Recommended to be lower than all kernel init priorites.
+
+config LCZ_LWM2M_FW_UPDATE_MCUBOOT_FLASH_BUF_SIZE
+	int "Flash write buffer size during MCUboot updates"
+	default 512
+	help
+	  Buffer size must be aligned to the minimal flash write block size.
+
+config LCZ_LWM2M_FW_UPDATE_REBOOT_DELAY_SECONDS
+	int "Reboot delay"
+	default 10
+
+config LCZ_LWM2M_FW_UPDATE_ENABLE_ATTRIBUTES
+	bool "Enable attributes"
+	depends on ATTR
+	help
+	  Enable attributes system for LwM2M firmware update.
+
+choice
+	prompt "Init mode"
+	default LCZ_LWM2M_FW_UPDATE_INIT_KCONFIG
+
+config LCZ_LWM2M_FW_UPDATE_INIT_KCONFIG
+	bool "Kconfig"
+	help
+	  Use Kconfig settings to init.
+
+config LCZ_LWM2M_FW_UPDATE_INIT_ATTRIBUTES
+	bool "Attributes"
+	depends on ATTR
+	select LCZ_LWM2M_FW_UPDATE_ENABLE_ATTRIBUTES
+	help
+	  Use attributes system to init.
+
+endchoice
+
+if LCZ_LWM2M_FW_UPDATE_INIT_KCONFIG
+
+config LCZ_LWM2M_FW_UPDATE_PKG_NAME
+	string "Package name"
+	default "my_firmware"
+
+config LCZ_LWM2M_FW_UPDATE_PKG_VERSION
+	string "Package version"
+	default "0.0.0"
+
+endif # LCZ_LWM2M_FW_UPDATE_INIT_KCONFIG
+
+endif # LCZ_LWM2M_FW_UPDATE
