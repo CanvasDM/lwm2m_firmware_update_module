@@ -36,7 +36,6 @@ LOG_MODULE_REGISTER(lcz_lwm2m_fw_update, CONFIG_LCZ_LWM2M_FW_UPDATE_LOG_LEVEL);
 /**************************************************************************************************/
 static uint8_t __aligned(4) mcuboot_buf[CONFIG_LCZ_LWM2M_FW_UPDATE_MCUBOOT_FLASH_BUF_SIZE];
 static uint8_t firmware_data_buf[CONFIG_LCZ_LWM2M_COAP_BLOCK_SIZE];
-static struct k_work_delayable work_reboot;
 
 /**************************************************************************************************/
 /* Local Function Prototypes                                                                      */
@@ -47,7 +46,6 @@ static int lwm2m_fw_block_received_callback(uint16_t obj_inst_id, uint16_t res_i
 					    uint16_t res_inst_id, uint8_t *data, uint16_t data_len,
 					    bool last_block, size_t total_size);
 static int lwm2m_fw_update_callback(uint16_t obj_inst_id, uint8_t *args, uint16_t args_len);
-static void work_reboot_callback(struct k_work *item);
 static void lwm2m_set_fw_update_state(int state);
 static void lwm2m_set_fw_update_result(int result);
 static void dfu_target_cb(enum dfu_target_evt_id evt);
@@ -184,25 +182,12 @@ static int lwm2m_fw_update_callback(uint16_t obj_inst_id, uint8_t *args, uint16_
 		LOG_ERR("Failed to upgrade firmware [%d]", rc);
 		lwm2m_set_fw_update_state(STATE_IDLE);
 		lwm2m_set_fw_update_result(RESULT_UPDATE_FAILED);
-		goto done;
 	} else {
 		lwm2m_set_fw_update_state(STATE_UPDATING);
+		lcz_lwm2m_client_reboot();
 	}
 
-	(void)lcz_lwm2m_client_disconnect(true);
-
-	LOG_INF("Rebooting device in %d seconds", CONFIG_LCZ_LWM2M_FW_UPDATE_REBOOT_DELAY_SECONDS);
-	k_work_schedule(&work_reboot, REBOOT_DELAY);
-done:
 	return rc;
-}
-
-static void work_reboot_callback(struct k_work *item)
-{
-	ARG_UNUSED(item);
-
-	LOG_PANIC();
-	sys_reboot(SYS_REBOOT_COLD);
 }
 
 static void lwm2m_set_fw_update_state(int state)
@@ -281,8 +266,6 @@ static int lcz_lwm2m_fw_update_init(const struct device *device)
 	pkg_name = (char *)attr_get_quasi_static(ATTR_ID_lwm2m_fup_pkg_name);
 	pkg_ver = (char *)attr_get_quasi_static(ATTR_ID_lwm2m_fup_pkg_ver);
 #endif
-
-	k_work_init_delayable(&work_reboot, work_reboot_callback);
 
 	/* Setup data buffer for block-wise transfer */
 	lwm2m_engine_register_pre_write_callback("5/0/0", lwm2m_fw_prewrite_callback);
