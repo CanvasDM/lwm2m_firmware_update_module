@@ -82,7 +82,7 @@ static int lwm2m_fw_block_received_callback(uint16_t obj_inst_id, uint16_t res_i
 	if (bytes_downloaded == 0) {
 		image_type = dfu_target_img_type(data, data_len);
 
-		ret = dfu_target_init(image_type, total_size, dfu_target_cb);
+		ret = dfu_target_init(image_type, 0, total_size, dfu_target_cb);
 		if (ret < 0) {
 			LOG_ERR("Failed to init DFU target, err: %d", ret);
 			lwm2m_set_fw_update_state(STATE_IDLE);
