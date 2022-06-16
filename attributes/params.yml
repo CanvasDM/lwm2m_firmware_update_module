@@ -6,7 +6,7 @@ lwm2m_fup_pkg_name:
     maxLength: 32
     minLength: 1
     type: string
-    x-ctype: string
+  x-ctype: string
   x-broadcast: true
   x-default: my_firmware
   x-lockable: false
@@ -22,7 +22,7 @@ lwm2m_fup_pkg_ver:
     maxLength: 32
     minLength: 1
     type: string
-    x-ctype: string
+  x-ctype: string
   x-broadcast: true
   x-default: 0.0.0
   x-lockable: false
