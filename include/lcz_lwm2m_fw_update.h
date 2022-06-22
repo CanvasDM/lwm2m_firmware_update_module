@@ -40,6 +40,22 @@ int lcz_lwm2m_fw_update_set_pkg_name(char *value);
  */
 int lcz_lwm2m_fw_update_set_pkg_version(char *value);
 
+/**
+ * @brief Set proxy server URI
+ *
+ * @param value proxy server url
+ * @return int 0 on success, < 0 on error
+ */
+int lcz_lwm2m_fw_update_set_proxy_server(char *value);
+
+/**
+ * @brief Load credential information for a file transfer context
+ *
+ * @param[in] client_ctx LwM2M engine context to use
+ * @return 0 on success, <0 or error
+ */
+int lcz_lwm2m_fw_update_load_certs(struct lwm2m_ctx * client_ctx);
+
 #ifdef __cplusplus
 }
 #endif

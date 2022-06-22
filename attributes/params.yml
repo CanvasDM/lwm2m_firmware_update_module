@@ -32,3 +32,19 @@ attributes:
     x-savable: false
     x-writable: false
     summary: Firmware update package version
+  - name: lwm2m_fup_proxy_srv
+    required: true
+    schema:
+      maxLength: 255
+      minLength: 11 # coap://1.io
+      type: string
+      pattern: coaps?://(\.?|\w|[-|_])+([\.|/]((\w|[0-9]|[-|_])*))+(\:[0-9]{1,5})?
+    x-ctype: string
+    x-broadcast: true
+    x-default: coaps://coap-proxy.salticidae.net:5684
+    x-lockable: true
+    x-prepare: false
+    x-readable: true
+    x-savable: true
+    x-writable: true
+    summary: Firmware update proxy server
