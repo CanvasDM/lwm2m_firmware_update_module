@@ -38,7 +38,7 @@ attributes:
       maxLength: 255
       minLength: 11 # coap://1.io
       type: string
-      pattern: coaps?://(\.?|\w|[-|_])+([\.|/]((\w|[0-9]|[-|_])*))+(\:[0-9]{1,5})?
+      pattern: ^coaps?://[a-zA-Z0-9]+(-[a-zA-Z0-9]+)?(\.[a-zA-Z0-9]+(-[a-zA-Z0-9]+)?)+(:\d{1,5})?/?$
     x-ctype: string
     x-broadcast: true
     x-default: coaps://coap-proxy.salticidae.net:5684
