@@ -35,26 +35,10 @@ config LCZ_LWM2M_FW_UPDATE_REBOOT_DELAY_SECONDS
 	int "Reboot delay"
 	default 10
 
-config LCZ_LWM2M_FW_UPDATE_ENABLE_CLIENT_CERT
+config LCZ_LWM2M_FW_UPDATE_ENABLE_PKI
 	bool "Enable client certificate for firmware pull transfer"
 	depends on LCZ_LWM2M_FIRMWARE_UPDATE_PULL_SUPPORT
-	depends on FILE_SYSTEM_UTILITIES
-
-if LCZ_LWM2M_FW_UPDATE_ENABLE_CLIENT_CERT
-
-config LCZ_LWM2M_FW_UPDATE_CA_CERT_FILENAME
-	string "CA certificate filename for file transfer"
-	default "/lfs1/active/file_proxy_ca.crt"
-
-config LCZ_LWM2M_FW_UPDATE_CLIENT_CERT_FILENAME
-	string "Client certificate filename for file transfer"
-	default "/lfs1/active/file_proxy_client.crt"
-
-config LCZ_LWM2M_FW_UPDATE_CLIENT_KEY_FILENAME
-	string "Client private key filename for file transfer"
-	default "/lfs1/active/file_proxy_client.key"
-
-endif # LCZ_LWM2M_FW_UPDATE_ENABLE_CLIENT_CERT
+	depends on LCZ_PKI_AUTH
 
 config LCZ_LWM2M_FW_UPDATE_ENABLE_ATTRIBUTES
 	bool "Enable attributes"

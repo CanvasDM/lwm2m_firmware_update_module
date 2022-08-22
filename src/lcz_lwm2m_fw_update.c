@@ -19,9 +19,8 @@ LOG_MODULE_REGISTER(lcz_lwm2m_fw_update, CONFIG_LCZ_LWM2M_FW_UPDATE_LOG_LEVEL);
 #include <dfu/dfu_target.h>
 #include <dfu/dfu_target_mcuboot.h>
 #include <logging/log_ctrl.h>
-#if defined(CONFIG_LCZ_LWM2M_FW_UPDATE_ENABLE_CLIENT_CERT)
-#include <net/tls_credentials.h>
-#include <file_system_utilities.h>
+#if defined(CONFIG_LCZ_LWM2M_FW_UPDATE_ENABLE_PKI)
+#include <lcz_pki_auth.h>
 #endif
 
 #include "lcz_lwm2m_client.h"
@@ -42,13 +41,6 @@ LOG_MODULE_REGISTER(lcz_lwm2m_fw_update, CONFIG_LCZ_LWM2M_FW_UPDATE_LOG_LEVEL);
 static uint8_t __aligned(4) mcuboot_buf[CONFIG_LCZ_LWM2M_FW_UPDATE_MCUBOOT_FLASH_BUF_SIZE];
 static uint8_t firmware_data_buf[CONFIG_LCZ_LWM2M_COAP_BLOCK_SIZE];
 
-#if defined(CONFIG_LCZ_LWM2M_FW_UPDATE_ENABLE_CLIENT_CERT)
-/* Pointers to allocated memory for file transfer credentials */
-static char *fw_update_ca_cert = NULL;
-static char *fw_update_client_cert = NULL;
-static char *fw_update_client_key = NULL;
-#endif /* CONFIG_LCZ_LWM2M_FW_UPDATE_ENABLE_CLIENT_CERT */
-
 /**************************************************************************************************/
 /* Local Function Prototypes                                                                      */
 /**************************************************************************************************/
@@ -62,9 +54,6 @@ static void lwm2m_set_fw_update_state(int state);
 static void lwm2m_set_fw_update_result(int result);
 static void dfu_target_cb(enum dfu_target_evt_id evt);
 static int lcz_lwm2m_fw_update_init(const struct device *device);
-#if defined(CONFIG_LCZ_LWM2M_FW_UPDATE_ENABLE_CLIENT_CERT)
-static char *load_credential_file(char *filename);
-#endif
 
 /**************************************************************************************************/
 /* Local Function Definitions                                                                     */
@@ -220,35 +209,6 @@ static void dfu_target_cb(enum dfu_target_evt_id evt)
 	ARG_UNUSED(evt);
 }
 
-#if defined(CONFIG_LCZ_LWM2M_FW_UPDATE_ENABLE_CLIENT_CERT)
-static char *load_credential_file(char *filename)
-{
-	ssize_t file_size;
-	char *file_data = NULL;
-
-	file_size = fsu_get_file_size_abs(filename);
-	if (file_size > 0) {
-		file_data = (char *)k_malloc(file_size + 1);
-		if (file_data != NULL) {
-			if (fsu_read_abs(filename, file_data, file_size) == file_size) {
-				/* Nul-terminate the file data string */
-				file_data[file_size] = '\0';
-			} else {
-				LOG_ERR("Read failed of file %s size %d", log_strdup(filename),
-					file_size);
-				k_free(file_data);
-				file_data = NULL;
-			}
-		} else {
-			LOG_ERR("Failed to malloc for reading file %s size %d",
-				log_strdup(filename), file_size);
-		}
-	}
-
-	return file_data;
-}
-#endif /* CONFIG_LCZ_LWM2M_FW_UPDATE_ENABLE_CLIENT_CERT */
-
 /**************************************************************************************************/
 /* Global Function Definitions                                                                    */
 /**************************************************************************************************/
@@ -309,69 +269,13 @@ exit:
 }
 #endif
 
-#if defined(CONFIG_LCZ_LWM2M_FW_UPDATE_ENABLE_CLIENT_CERT)
+#if defined(CONFIG_LCZ_LWM2M_FW_UPDATE_ENABLE_PKI)
 int lcz_lwm2m_fw_update_load_certs(struct lwm2m_ctx *client_ctx)
 {
-	int ret;
-
-	/* Delete any existing credential */
-	tls_credential_delete(client_ctx->tls_tag, TLS_CREDENTIAL_CA_CERTIFICATE);
-	tls_credential_delete(client_ctx->tls_tag, TLS_CREDENTIAL_SERVER_CERTIFICATE);
-	tls_credential_delete(client_ctx->tls_tag, TLS_CREDENTIAL_PRIVATE_KEY);
-	tls_credential_delete(client_ctx->tls_tag, TLS_CREDENTIAL_PSK);
-	tls_credential_delete(client_ctx->tls_tag, TLS_CREDENTIAL_PSK_ID);
-
-	/* Load the CA certificate if we haven't already */
-	if (fw_update_ca_cert == NULL) {
-		fw_update_ca_cert =
-			load_credential_file(CONFIG_LCZ_LWM2M_FW_UPDATE_CA_CERT_FILENAME);
-	}
-
-	/* Set the CA certificate */
-	if (fw_update_ca_cert != NULL) {
-		ret = tls_credential_add(client_ctx->tls_tag, TLS_CREDENTIAL_CA_CERTIFICATE,
-					 fw_update_ca_cert, strlen(fw_update_ca_cert) + 1);
-		if (ret < 0) {
-			LOG_ERR("tls_credential_add(CA_CERT) failed %d", ret);
-			return ret;
-		}
-	}
-
-	/* Load the client certificate if we haven't already */
-	if (fw_update_client_cert == NULL) {
-		fw_update_client_cert =
-			load_credential_file(CONFIG_LCZ_LWM2M_FW_UPDATE_CLIENT_CERT_FILENAME);
-	}
-
-	/* Set the CA certificate */
-	if (fw_update_client_cert != NULL) {
-		ret = tls_credential_add(client_ctx->tls_tag, TLS_CREDENTIAL_SERVER_CERTIFICATE,
-					 fw_update_client_cert, strlen(fw_update_client_cert) + 1);
-		if (ret < 0) {
-			LOG_ERR("tls_credential_add(SERVER_CERT) failed %d", ret);
-			return ret;
-		}
-	}
-
-	/* Load the client key if we haven't already */
-	if (fw_update_client_key == NULL) {
-		fw_update_client_key =
-			load_credential_file(CONFIG_LCZ_LWM2M_FW_UPDATE_CLIENT_KEY_FILENAME);
-	}
-
-	/* Set the CA certificate */
-	if (fw_update_client_key != NULL) {
-		ret = tls_credential_add(client_ctx->tls_tag, TLS_CREDENTIAL_PRIVATE_KEY,
-					 fw_update_client_key, strlen(fw_update_client_key) + 1);
-		if (ret < 0) {
-			LOG_ERR("tls_credential_add(PRIVATE_KEY) failed %d", ret);
-			return ret;
-		}
-	}
-
-	return 0;
+	return lcz_pki_auth_tls_credential_load(LCZ_PKI_AUTH_STORE_FILE_SERVICE,
+						client_ctx->tls_tag);
 }
-#endif /* CONFIG_LCZ_LWM2M_FW_UPDATE_ENABLE_CLIENT_CERT */
+#endif /* CONFIG_LCZ_LWM2M_FW_UPDATE_ENABLE_PKI */
 
 SYS_INIT(lcz_lwm2m_fw_update_init, APPLICATION, CONFIG_LCZ_LWM2M_FW_UPDATE_INIT_PRIORITY);
 /**************************************************************************************************/
@@ -411,7 +315,7 @@ static int lcz_lwm2m_fw_update_init(const struct device *device)
 #if defined(CONFIG_LCZ_LWM2M_FIRMWARE_UPDATE_PULL_SUPPORT)
 	lwm2m_firmware_set_update_cb(lwm2m_fw_update_callback);
 #endif
-#if defined(CONFIG_LCZ_LWM2M_FW_UPDATE_ENABLE_CLIENT_CERT)
+#if defined(CONFIG_LCZ_LWM2M_FW_UPDATE_ENABLE_PKI)
 	lwm2m_firmware_set_credential_cb(lcz_lwm2m_fw_update_load_certs);
 #endif
 
