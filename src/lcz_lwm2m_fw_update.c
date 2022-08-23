@@ -40,6 +40,9 @@ LOG_MODULE_REGISTER(lcz_lwm2m_fw_update, CONFIG_LCZ_LWM2M_FW_UPDATE_LOG_LEVEL);
 /**************************************************************************************************/
 static uint8_t __aligned(4) mcuboot_buf[CONFIG_LCZ_LWM2M_FW_UPDATE_MCUBOOT_FLASH_BUF_SIZE];
 static uint8_t firmware_data_buf[CONFIG_LCZ_LWM2M_COAP_BLOCK_SIZE];
+static uint8_t percent_downloaded = 0;
+static uint32_t bytes_downloaded = 0;
+static int image_type = DFU_TARGET_IMAGE_TYPE_ANY;
 
 /**************************************************************************************************/
 /* Local Function Prototypes                                                                      */
@@ -69,14 +72,11 @@ static int lwm2m_fw_block_received_callback(uint16_t obj_inst_id, uint16_t res_i
 					    uint16_t res_inst_id, uint8_t *data, uint16_t data_len,
 					    bool last_block, size_t total_size)
 {
-	static uint8_t percent_downloaded;
-	static uint32_t bytes_downloaded;
 	uint8_t curent_percent;
 	uint32_t current_bytes;
 	size_t offset;
 	size_t skip = 0;
 	int ret = 0;
-	int image_type;
 
 	if (!data_len) {
 		LOG_ERR("Data len is zero, nothing to write.");
@@ -148,6 +148,14 @@ static int lwm2m_fw_block_received_callback(uint16_t obj_inst_id, uint16_t res_i
 		/* Keep going */
 		return 0;
 	} else {
+		ret = dfu_target_done(true);
+		if (ret == 0) {
+			ret = dfu_target_schedule_update(0);
+		}
+		if (ret < 0) {
+			LOG_ERR("Could not schedule update [%d]", ret);
+			goto cleanup;
+		}
 		LOG_INF("Firmware downloaded, %d bytes in total", bytes_downloaded);
 	}
 
@@ -177,21 +185,11 @@ static int lwm2m_fw_update_callback(uint16_t obj_inst_id, uint8_t *args, uint16_
 	ARG_UNUSED(args);
 	ARG_UNUSED(args_len);
 
-	int rc;
-
 	LOG_INF("Executing firmware update");
+	lwm2m_set_fw_update_state(STATE_UPDATING);
+	lcz_lwm2m_client_reboot();
 
-	rc = dfu_target_done(true);
-	if (rc != 0) {
-		LOG_ERR("Failed to upgrade firmware [%d]", rc);
-		lwm2m_set_fw_update_state(STATE_IDLE);
-		lwm2m_set_fw_update_result(RESULT_UPDATE_FAILED);
-	} else {
-		lwm2m_set_fw_update_state(STATE_UPDATING);
-		lcz_lwm2m_client_reboot();
-	}
-
-	return rc;
+	return 0;
 }
 
 static void lwm2m_set_fw_update_state(int state)
