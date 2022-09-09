@@ -11,7 +11,6 @@ attributes:
     x-ctype: string
     x-broadcast: true
     x-default: my_firmware
-    x-lockable: false
     x-prepare: false
     x-readable: true
     x-savable: false
@@ -26,7 +25,6 @@ attributes:
     x-ctype: string
     x-broadcast: true
     x-default: 0.0.0
-    x-lockable: false
     x-prepare: false
     x-readable: true
     x-savable: false
@@ -42,7 +40,6 @@ attributes:
     x-ctype: string
     x-broadcast: true
     x-default: coaps://coap-proxy.salticidae.net:5684
-    x-lockable: true
     x-prepare: false
     x-readable: true
     x-savable: true
