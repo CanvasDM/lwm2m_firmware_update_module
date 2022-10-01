@@ -84,4 +84,10 @@ endif # LCZ_LWM2M_FIRMWARE_UPDATE_PULL_COAP_PROXY_SUPPORT
 
 endif # LCZ_LWM2M_FW_UPDATE_INIT_KCONFIG
 
+config LCZ_LWM2M_FW_UPDATE_SHELL
+	bool "Shell commands for file download"
+	depends on FILE_SYSTEM_UTILITIES
+	help
+	  Enables a shell command to allow file to be downloaded to the file system
+
 endif # LCZ_LWM2M_FW_UPDATE
