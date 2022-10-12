@@ -271,7 +271,7 @@ exit:
 int lcz_lwm2m_fw_update_load_certs(struct lwm2m_ctx *client_ctx)
 {
 	return lcz_pki_auth_tls_credential_load(LCZ_PKI_AUTH_STORE_FILE_SERVICE,
-						client_ctx->tls_tag);
+						client_ctx->tls_tag, false);
 }
 #endif /* CONFIG_LCZ_LWM2M_FW_UPDATE_ENABLE_PKI */
 
