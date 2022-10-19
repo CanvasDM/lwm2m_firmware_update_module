@@ -34,7 +34,11 @@ LOG_MODULE_REGISTER(lcz_lwm2m_fw_update, CONFIG_LCZ_LWM2M_FW_UPDATE_LOG_LEVEL);
 /**************************************************************************************************/
 #define BYTE_PROGRESS_STEP (1024 * 10)
 #define REBOOT_DELAY K_SECONDS(CONFIG_LCZ_LWM2M_FW_UPDATE_REBOOT_DELAY_SECONDS)
-
+#if defined(CONFIG_LCZ_LWM2M_FIRMWARE_UPDATE_PULL_COAP_PROXY_SUPPORT)
+#define FIRMWARE_UPDATE_PROTOCOL_INST_0 "5/0/8/0"
+#define FW_UPDATE_PROTO_COAPS 1
+#define FW_DELIVERY_PULL_ONLY 0
+#endif
 /**************************************************************************************************/
 /* Local Data Definitions                                                                         */
 /**************************************************************************************************/
@@ -286,6 +290,7 @@ static int lcz_lwm2m_fw_update_init(const struct device *device)
 	char *pkg_ver;
 #if defined(CONFIG_LCZ_LWM2M_FIRMWARE_UPDATE_PULL_COAP_PROXY_SUPPORT)
 	char *proxy_server;
+	static uint8_t delivery_method;
 #endif
 	bool image_ok;
 
@@ -335,6 +340,11 @@ static int lcz_lwm2m_fw_update_init(const struct device *device)
 		LOG_ERR("Could not set proxy server [%d]", ret);
 		goto exit;
 	}
+	delivery_method = FW_UPDATE_PROTO_COAPS;
+	(void)lwm2m_engine_create_res_inst(FIRMWARE_UPDATE_PROTOCOL_INST_0);
+	(void)lwm2m_engine_set_res_data(FIRMWARE_UPDATE_PROTOCOL_INST_0, &delivery_method,
+					sizeof(delivery_method), LWM2M_RES_DATA_FLAG_RO);
+	(void)lwm2m_engine_set_u8("5/0/9", FW_DELIVERY_PULL_ONLY);
 #endif
 
 	/* Set the required buffer for MCUboot targets */
