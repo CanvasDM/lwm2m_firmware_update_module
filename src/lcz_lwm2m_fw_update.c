@@ -99,6 +99,7 @@ static int lwm2m_fw_block_received_callback(uint16_t obj_inst_id, uint16_t res_i
 		}
 
 		LOG_INF("Firmware download started.");
+		lwm2m_set_fw_update_result(RESULT_DEFAULT);
 		lwm2m_set_fw_update_state(STATE_DOWNLOADING);
 	}
 
@@ -203,7 +204,7 @@ static void lwm2m_set_fw_update_state(int state)
 
 static void lwm2m_set_fw_update_result(int result)
 {
-	lwm2m_engine_set_u8("5/0/5", result);
+	lwm2m_engine_set_u8("5/0/5", (uint8_t)result);
 }
 
 static void dfu_target_cb(enum dfu_target_evt_id evt)
