@@ -6,21 +6,22 @@
  * SPDX-License-Identifier: LicenseRef-LairdConnectivity-Clause
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(lcz_lwm2m_fw_update_shell, CONFIG_LCZ_LWM2M_FW_UPDATE_LOG_LEVEL);
 
 /**************************************************************************************************/
 /* Includes                                                                                       */
 /**************************************************************************************************/
 #include <stdlib.h>
-#include <shell/shell.h>
-#include <lcz_lwm2m.h>
+#include <zephyr/shell/shell.h>
+#include <zephyr/net/lwm2m.h>
 
-#include "file_system_utilities.h"
+#include <file_system_utilities.h>
 #if defined(CONFIG_FSU_ENCRYPTED_FILES)
-#include "encrypted_file_storage.h"
+#include <encrypted_file_storage.h>
 #endif
-#include "lwm2m_pull_context.h"
+#include <lwm2m_pull_context.h>
+
 #include "lcz_lwm2m_fw_update.h"
 
 /**************************************************************************************************/

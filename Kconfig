@@ -6,7 +6,7 @@
 menuconfig LCZ_LWM2M_FW_UPDATE
 	bool "LCZ LwM2M Firmware Update"
 	depends on LCZ_LWM2M_CLIENT
-	depends on LCZ_LWM2M_FIRMWARE_UPDATE_OBJ_SUPPORT
+	depends on LWM2M_FIRMWARE_UPDATE_OBJ_SUPPORT
 	depends on MCUBOOT_IMG_MANAGER
 	depends on DFU_TARGET
 	depends on IMG_ERASE_PROGRESSIVELY
@@ -37,7 +37,7 @@ config LCZ_LWM2M_FW_UPDATE_REBOOT_DELAY_SECONDS
 
 config LCZ_LWM2M_FW_UPDATE_ENABLE_PKI
 	bool "Enable client certificate for firmware pull transfer"
-	depends on LCZ_LWM2M_FIRMWARE_UPDATE_PULL_SUPPORT
+	depends on LWM2M_FIRMWARE_UPDATE_PULL_SUPPORT
 	depends on LCZ_PKI_AUTH
 
 config LCZ_LWM2M_FW_UPDATE_ENABLE_ATTRIBUTES

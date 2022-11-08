@@ -9,32 +9,34 @@
 /**************************************************************************************************/
 /* Includes                                                                                       */
 /**************************************************************************************************/
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(lcz_lwm2m_fw_update, CONFIG_LCZ_LWM2M_FW_UPDATE_LOG_LEVEL);
 
-#include <zephyr.h>
-#include <init.h>
-#include <sys/reboot.h>
-#include <dfu/mcuboot.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/init.h>
+#include <zephyr/sys/reboot.h>
+#include <zephyr/dfu/mcuboot.h>
 #include <dfu/dfu_target.h>
 #include <dfu/dfu_target_mcuboot.h>
-#include <logging/log_ctrl.h>
+#include <zephyr/logging/log_ctrl.h>
+
 #if defined(CONFIG_LCZ_LWM2M_FW_UPDATE_ENABLE_PKI)
 #include <lcz_pki_auth.h>
 #endif
 
-#include "lcz_lwm2m_client.h"
-#include "lcz_lwm2m_fw_update.h"
+#include <lcz_lwm2m_client.h>
 #if defined(CONFIG_LCZ_LWM2M_FW_UPDATE_ENABLE_ATTRIBUTES)
-#include "attr.h"
+#include <attr.h>
 #endif
+
+#include "lcz_lwm2m_fw_update.h"
 
 /**************************************************************************************************/
 /* Local Constant, Macro and Type Definitions                                                     */
 /**************************************************************************************************/
 #define BYTE_PROGRESS_STEP (1024 * 10)
 #define REBOOT_DELAY K_SECONDS(CONFIG_LCZ_LWM2M_FW_UPDATE_REBOOT_DELAY_SECONDS)
-#if defined(CONFIG_LCZ_LWM2M_FIRMWARE_UPDATE_PULL_COAP_PROXY_SUPPORT)
+#if defined(CONFIG_LWM2M_FIRMWARE_UPDATE_PULL_COAP_PROXY_SUPPORT)
 #define FIRMWARE_UPDATE_PROTOCOL_INST_0 "5/0/8/0"
 #define FW_UPDATE_PROTO_COAPS 1
 #define FW_DELIVERY_PULL_ONLY 0
@@ -43,7 +45,7 @@ LOG_MODULE_REGISTER(lcz_lwm2m_fw_update, CONFIG_LCZ_LWM2M_FW_UPDATE_LOG_LEVEL);
 /* Local Data Definitions                                                                         */
 /**************************************************************************************************/
 static uint8_t __aligned(4) mcuboot_buf[CONFIG_LCZ_LWM2M_FW_UPDATE_MCUBOOT_FLASH_BUF_SIZE];
-static uint8_t firmware_data_buf[CONFIG_LCZ_LWM2M_COAP_BLOCK_SIZE];
+static uint8_t firmware_data_buf[CONFIG_LWM2M_COAP_BLOCK_SIZE];
 static uint8_t percent_downloaded = 0;
 static uint32_t bytes_downloaded = 0;
 static int image_type = DFU_TARGET_IMAGE_TYPE_ANY;
@@ -225,8 +227,8 @@ int lcz_lwm2m_fw_update_set_pkg_name(char *value)
 		goto exit;
 	}
 #endif
-	ret = lwm2m_engine_set_res_data("5/0/6/0", value, strlen(value) + 1,
-					LWM2M_RES_DATA_FLAG_RO);
+	ret = lwm2m_engine_set_res_buf("5/0/6/0", value, strlen(value) + 1, strlen(value) + 1,
+				       LWM2M_RES_DATA_FLAG_RO);
 	if (ret < 0) {
 		goto exit;
 	}
@@ -244,8 +246,8 @@ int lcz_lwm2m_fw_update_set_pkg_version(char *value)
 		goto exit;
 	}
 #endif
-	ret = lwm2m_engine_set_res_data("5/0/7/0", value, strlen(value) + 1,
-					LWM2M_RES_DATA_FLAG_RO);
+	ret = lwm2m_engine_set_res_buf("5/0/7/0", value, strlen(value) + 1, strlen(value) + 1,
+				       LWM2M_RES_DATA_FLAG_RO);
 	if (ret < 0) {
 		goto exit;
 	}
@@ -253,7 +255,7 @@ exit:
 	return ret;
 }
 
-#if defined(CONFIG_LCZ_LWM2M_FIRMWARE_UPDATE_PULL_COAP_PROXY_SUPPORT)
+#if defined(CONFIG_LWM2M_FIRMWARE_UPDATE_PULL_COAP_PROXY_SUPPORT)
 int lcz_lwm2m_fw_update_set_proxy_server(char *value)
 {
 	int ret = 0;
@@ -289,7 +291,7 @@ static int lcz_lwm2m_fw_update_init(const struct device *device)
 	int ret;
 	char *pkg_name;
 	char *pkg_ver;
-#if defined(CONFIG_LCZ_LWM2M_FIRMWARE_UPDATE_PULL_COAP_PROXY_SUPPORT)
+#if defined(CONFIG_LWM2M_FIRMWARE_UPDATE_PULL_COAP_PROXY_SUPPORT)
 	char *proxy_server;
 	static uint8_t delivery_method;
 #endif
@@ -305,7 +307,7 @@ static int lcz_lwm2m_fw_update_init(const struct device *device)
 	pkg_ver = (char *)attr_get_quasi_static(ATTR_ID_lwm2m_fup_pkg_ver);
 #endif
 
-#if defined(CONFIG_LCZ_LWM2M_FIRMWARE_UPDATE_PULL_COAP_PROXY_SUPPORT)
+#if defined(CONFIG_LWM2M_FIRMWARE_UPDATE_PULL_COAP_PROXY_SUPPORT)
 #if defined(CONFIG_LCZ_LWM2M_FW_UPDATE_INIT_KCONFIG)
 	proxy_server = CONFIG_LCZ_LWM2M_FW_UPDATE_PROXY_URL;
 #else
@@ -316,7 +318,7 @@ static int lcz_lwm2m_fw_update_init(const struct device *device)
 	/* Setup data buffer for block-wise transfer */
 	lwm2m_engine_register_pre_write_callback("5/0/0", lwm2m_fw_prewrite_callback);
 	lwm2m_firmware_set_write_cb(lwm2m_fw_block_received_callback);
-#if defined(CONFIG_LCZ_LWM2M_FIRMWARE_UPDATE_PULL_SUPPORT)
+#if defined(CONFIG_LWM2M_FIRMWARE_UPDATE_PULL_SUPPORT)
 	lwm2m_firmware_set_update_cb(lwm2m_fw_update_callback);
 #endif
 #if defined(CONFIG_LCZ_LWM2M_FW_UPDATE_ENABLE_PKI)
@@ -335,7 +337,7 @@ static int lcz_lwm2m_fw_update_init(const struct device *device)
 		goto exit;
 	}
 
-#if defined(CONFIG_LCZ_LWM2M_FIRMWARE_UPDATE_PULL_COAP_PROXY_SUPPORT)
+#if defined(CONFIG_LWM2M_FIRMWARE_UPDATE_PULL_COAP_PROXY_SUPPORT)
 	ret = lcz_lwm2m_fw_update_set_proxy_server(proxy_server);
 	if (ret < 0) {
 		LOG_ERR("Could not set proxy server [%d]", ret);
@@ -343,8 +345,9 @@ static int lcz_lwm2m_fw_update_init(const struct device *device)
 	}
 	delivery_method = FW_UPDATE_PROTO_COAPS;
 	(void)lwm2m_engine_create_res_inst(FIRMWARE_UPDATE_PROTOCOL_INST_0);
-	(void)lwm2m_engine_set_res_data(FIRMWARE_UPDATE_PROTOCOL_INST_0, &delivery_method,
-					sizeof(delivery_method), LWM2M_RES_DATA_FLAG_RO);
+	(void)lwm2m_engine_set_res_buf(FIRMWARE_UPDATE_PROTOCOL_INST_0, &delivery_method,
+				       sizeof(delivery_method), sizeof(delivery_method),
+				       LWM2M_RES_DATA_FLAG_RO);
 	(void)lwm2m_engine_set_u8("5/0/9", FW_DELIVERY_PULL_ONLY);
 #endif
 
