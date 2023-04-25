@@ -70,10 +70,6 @@ config LCZ_LWM2M_FW_UPDATE_PKG_NAME
 	string "Package name"
 	default "my_firmware"
 
-config LCZ_LWM2M_FW_UPDATE_PKG_VERSION
-	string "Package version"
-	default "0.0.0"
-
 if LCZ_LWM2M_FIRMWARE_UPDATE_PULL_COAP_PROXY_SUPPORT
 
 config LCZ_LWM2M_FW_UPDATE_PROXY_URL

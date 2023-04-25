@@ -14,11 +14,13 @@ LOG_MODULE_REGISTER(lcz_lwm2m_fw_update, CONFIG_LCZ_LWM2M_FW_UPDATE_LOG_LEVEL);
 
 #include <zephyr/zephyr.h>
 #include <zephyr/init.h>
+#include <stdio.h>
 #include <zephyr/sys/reboot.h>
 #include <zephyr/dfu/mcuboot.h>
 #include <dfu/dfu_target.h>
 #include <dfu/dfu_target_mcuboot.h>
 #include <zephyr/logging/log_ctrl.h>
+#include <zephyr/storage/flash_map.h>
 
 #if defined(CONFIG_LCZ_LWM2M_FW_UPDATE_ENABLE_PKI)
 #include <lcz_pki_auth.h>
@@ -41,6 +43,7 @@ LOG_MODULE_REGISTER(lcz_lwm2m_fw_update, CONFIG_LCZ_LWM2M_FW_UPDATE_LOG_LEVEL);
 #define FW_UPDATE_PROTO_COAPS 1
 #define FW_DELIVERY_PULL_ONLY 0
 #endif
+#define FLASH_AREA_IMAGE_SECONDARY FLASH_AREA_ID(image_1)
 /**************************************************************************************************/
 /* Local Data Definitions                                                                         */
 /**************************************************************************************************/
@@ -291,6 +294,8 @@ static int lcz_lwm2m_fw_update_init(const struct device *device)
 	int ret;
 	char *pkg_name;
 	char *pkg_ver;
+	bool second_img_present;
+	struct mcuboot_img_header image_header;
 #if defined(CONFIG_LWM2M_FIRMWARE_UPDATE_PULL_COAP_PROXY_SUPPORT)
 	char *proxy_server;
 	static uint8_t delivery_method;
@@ -301,7 +306,6 @@ static int lcz_lwm2m_fw_update_init(const struct device *device)
 
 #if defined(CONFIG_LCZ_LWM2M_FW_UPDATE_INIT_KCONFIG)
 	pkg_name = CONFIG_LCZ_LWM2M_FW_UPDATE_PKG_NAME;
-	pkg_ver = CONFIG_LCZ_LWM2M_FW_UPDATE_PKG_VERSION;
 #else
 	pkg_name = (char *)attr_get_quasi_static(ATTR_ID_lwm2m_fup_pkg_name);
 	pkg_ver = (char *)attr_get_quasi_static(ATTR_ID_lwm2m_fup_pkg_ver);
@@ -331,6 +335,19 @@ static int lcz_lwm2m_fw_update_init(const struct device *device)
 		goto exit;
 	}
 
+	ret = boot_read_bank_header(FLASH_AREA_IMAGE_SECONDARY, &image_header,
+				    sizeof(image_header));
+	if (ret) {
+		pkg_ver[0] = '\0';
+		second_img_present = false;
+	} else {
+		second_img_present = true;
+		snprintf(pkg_ver, ATTR_LWM2M_FUP_PKG_VER_MAX_STR_SIZE, "%u.%u.%u+%u",
+			 (uint32_t)image_header.h.v1.sem_ver.major,
+			 (uint32_t)image_header.h.v1.sem_ver.minor,
+			 (uint32_t)image_header.h.v1.sem_ver.revision,
+			 (uint32_t)image_header.h.v1.sem_ver.build_num);
+	}
 	ret = lcz_lwm2m_fw_update_set_pkg_version(pkg_ver);
 	if (ret < 0) {
 		LOG_ERR("Could not set pkg version [%d]", ret);
@@ -364,12 +381,12 @@ static int lcz_lwm2m_fw_update_init(const struct device *device)
 		ret = boot_write_img_confirmed();
 		if (ret) {
 			LOG_ERR("Couldn't confirm this image: %d", ret);
-			lwm2m_set_fw_update_state(STATE_IDLE);
 			lwm2m_set_fw_update_result(RESULT_UPDATE_FAILED);
 		} else {
 			LOG_INF("Marked image as OK");
-			lwm2m_set_fw_update_state(STATE_IDLE);
-			lwm2m_set_fw_update_result(RESULT_SUCCESS);
+			if (second_img_present) {
+				lwm2m_set_fw_update_result(RESULT_SUCCESS);
+			}
 		}
 	}
 

@@ -20,7 +20,6 @@ attributes:
     required: true
     schema:
       maxLength: 32
-      minLength: 1
       type: string
     x-ctype: string
     x-broadcast: true
