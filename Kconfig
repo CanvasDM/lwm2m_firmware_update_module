@@ -86,4 +86,9 @@ config LCZ_LWM2M_FW_UPDATE_SHELL
 	help
 	  Enables a shell command to allow file to be downloaded to the file system
 
+config LCZ_LWM2M_FW_UPDATE_PROTOCOL_SUPPORT
+	int "Firmware Update Protocol Support"
+    range 0 5
+	default 1
+
 endif # LCZ_LWM2M_FW_UPDATE

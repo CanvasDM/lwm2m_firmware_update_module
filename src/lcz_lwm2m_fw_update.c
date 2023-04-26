@@ -360,7 +360,7 @@ static int lcz_lwm2m_fw_update_init(const struct device *device)
 		LOG_ERR("Could not set proxy server [%d]", ret);
 		goto exit;
 	}
-	delivery_method = FW_UPDATE_PROTO_COAPS;
+	delivery_method = CONFIG_LCZ_LWM2M_FW_UPDATE_PROTOCOL_SUPPORT;
 	(void)lwm2m_engine_create_res_inst(FIRMWARE_UPDATE_PROTOCOL_INST_0);
 	(void)lwm2m_engine_set_res_buf(FIRMWARE_UPDATE_PROTOCOL_INST_0, &delivery_method,
 				       sizeof(delivery_method), sizeof(delivery_method),
